@@ -1,0 +1,97 @@
+const transporter = require("./transporter");
+const dotEnv = require("dotenv");
+dotEnv.config();
+
+const appLogo = process.env.APP_LOGO; // <-- Public URL of your logo
+
+const sendVerificationEmail = (userName, email, verifyAccountUrl) => {
+    const options = {
+        from: process.env.APP_EMAIL,
+        to: email,
+        sender: "EVENT MANAGEMENT",
+        subject: `Hey ${userName}, confirm your EventPlace account`,
+        html: `
+        <body style="margin:0; padding:0; background:#f7f7f7; font-family:Arial, sans-serif;">
+            <table role="presentation" width="100%" style="background:#f7f7f7; padding:40px 0;">
+                <tr>
+                    <td align="center">
+
+                        <table role="presentation" width="600" style="background:#ffffff; border-radius:8px; padding:40px; text-align:left;">
+                            
+                            <!-- LOGO -->
+                            <tr>
+                                <td style="text-align:center;">
+                                    <img src="${appLogo}" alt="EventPlace Logo" 
+                                        style="width:140px; margin-bottom:20px;" />
+                                </td>
+                            </tr>
+
+                            <!-- TITLE -->
+                            <tr>
+                                <td style="text-align:center;">
+                                    <h1 style="color:#4B22A7; margin:0 0 5px;">Verify Your Email Address</h1>
+                                </td>
+                            </tr>
+
+                            <!-- BODY -->
+                            <tr>
+                                <td style="padding-top:10px;">
+                                    <p style="font-size:16px; color:#444;">Hello ${userName},</p>
+
+                                    <p style="font-size:15px; color:#555; line-height:1.6;">
+                                        Thanks for signing up with <strong>EventPlace</strong>! 
+                                        Before you start attending and organizing events, 
+                                        we need you to confirm your email address.
+                                        Click the button below to complete your signup.
+                                    </p>
+
+                                    <!-- BUTTON -->
+                                    <div style="text-align:center; margin:30px 0;">
+                                        <a href="${verifyAccountUrl}"
+                                            style="background:#4B22A7; color:#ffffff; padding:14px 28px; 
+                                            font-size:16px; text-decoration:none; border-radius:6px; 
+                                            display:inline-block; font-weight:bold;">
+                                            Confirm Email Address
+                                        </a>
+                                    </div>
+
+                                    <!-- RAW LINK -->
+                                    <p style="font-size:14px; color:#777;">
+                                        If the button above does not work, copy and paste this link into your browser:
+                                    </p>
+
+                                    <p style="word-break:break-all; font-size:14px;">
+                                        <a href="${verifyAccountUrl}" style="color:#4B22A7;">
+                                            ${verifyAccountUrl}
+                                        </a>
+                                    </p>
+
+                                    <p style="color:#777; font-size:13px; margin-top:25px;">
+                                        If you didn’t request this, you can safely ignore this email.<br>
+                                        This verification link will expire in 1 hour.
+                                    </p>
+
+                                    <hr style="border:none; border-top:1px solid #eee; margin:25px 0;">
+
+                                    <p style="font-size:12px; color:#999; text-align:center;">
+                                        Need help? Contact us at 
+                                        <a href="mailto:support@example.com" style="color:#4B22A7;">
+                                            support@example.com
+                                        </a>
+                                    </p>
+
+                                </td>
+                            </tr>
+                        </table>
+
+                    </td>
+                </tr>
+            </table>
+        </body>
+        `
+    };
+
+    transporter.sendMail(options);
+};
+
+module.exports = sendVerificationEmail;
