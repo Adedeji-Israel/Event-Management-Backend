@@ -16,17 +16,12 @@ app.use(cookieParser());
 app.use(cors({
     origin: [
         "http://localhost:5174",
-        "https://your-frontend-domain.vercel.app"
+        "https://eventplace-sable.vercel.app" 
     ],
     credentials: true
 }));
 
-// app.use(cors({
-//     origin: "http://localhost:5174",
-//     methods: ["GET", "POST", "PUT", "DELETE"],
-//     credentials: true
-// }));
-
+app.set("trust proxy", 1); 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

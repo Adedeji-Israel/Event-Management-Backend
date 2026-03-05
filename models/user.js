@@ -63,8 +63,8 @@ const userSchema = mongoose.Schema({
         default: ""
     },
     resetPasswordExpires: {
-        type: String,
-        default: ""
+        type: Date,
+        default: null
     }
 },
     {
