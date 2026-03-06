@@ -50,6 +50,6 @@ app.all("*", (req, res) => {
     });
 });
 
-app.use("*", errorHandler);
+app.use(errorHandler);
 
 module.exports = app

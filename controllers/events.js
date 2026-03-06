@@ -75,12 +75,16 @@ const getEventById = async (req, res, next) => {
 /* ================= GET ORGANIZER EVENTS ================= */
 const getMyEvents = async (req, res, next) => {
   try {
-    const events = await EventCollection.find({
-      organizer: req.user._id,
-    }).lean();
+    const organizerId = req.user._id;
 
+    // Fetch all events for this organizer
+    const events = await EventCollection.find({ organizer: organizerId }).lean();
+
+    const eventIds = events.map(e => e._id);
+
+    // Aggregate ticket stats only for this organizer's events
     const tickets = await TicketCollection.aggregate([
-      { $match: { status: "paid" } },
+      { $match: { status: "paid", event: { $in: eventIds } } },
       {
         $group: {
           _id: "$event",
@@ -90,22 +94,45 @@ const getMyEvents = async (req, res, next) => {
       },
     ]);
 
+    // Map ticket stats to event IDs
     const ticketMap = {};
-    tickets.forEach((t) => (ticketMap[t._id.toString()] = t));
+    tickets.forEach(t => {
+      ticketMap[t._id.toString()] = t;
+    });
 
-    const eventsWithStats = events.map((event) => ({
+    // Merge stats into events
+    const eventsWithStats = events.map(event => ({
       ...event,
       bookingsCount: ticketMap[event._id]?.bookingsCount || 0,
       revenue: ticketMap[event._id]?.totalRevenue || 0,
     }));
 
+    // ================= DASHBOARD STATS =================
+    const totalEvents = events.length;
+    const liveEvents = events.filter(e => e.status === "live").length;
+
+    const totalTicketsSold = tickets.reduce(
+      (sum, t) => sum + t.bookingsCount,
+      0
+    );
+
+    const totalRevenue = tickets.reduce(
+      (sum, t) => sum + t.totalRevenue,
+      0
+    );
+
     res.status(200).json({
       status: "success",
-      eventsCount1: events.length,
+      stats: {
+        totalEvents,
+        liveEvents,
+        totalTicketsSold,
+        totalRevenue,
+      },
       events: eventsWithStats,
     });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };
 

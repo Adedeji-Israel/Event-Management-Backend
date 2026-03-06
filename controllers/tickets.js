@@ -169,7 +169,7 @@ const getAllTickets = async (req, res, next) => {
 /* ================= ORGANIZER: ALL BOOKED TICKETS ================= */
 const getBookedTickets = async (req, res, next) => {
   try {
-    const events = await Event.find({ organizer: req.user._id }).select("_id");
+    const events = await EventCollection.find({ organizer: req.user._id }).select("_id");
 
     const eventIds = events.map(event => event._id);
 
