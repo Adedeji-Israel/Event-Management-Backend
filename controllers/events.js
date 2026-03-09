@@ -13,7 +13,7 @@ const getAllEvents = async (req, res, next) => {
       {
         $group: {
           _id: "$event",
-          bookingsCount: { $sum: 1 },
+          bookingsCount: { $sum: "$totalQuantity" },
           totalRevenue: { $sum: "$amount" },
         },
       },
@@ -77,30 +77,26 @@ const getMyEvents = async (req, res, next) => {
   try {
     const organizerId = req.user._id;
 
-    // Fetch all events for this organizer
     const events = await EventCollection.find({ organizer: organizerId }).lean();
 
     const eventIds = events.map(e => e._id);
 
-    // Aggregate ticket stats only for this organizer's events
     const tickets = await TicketCollection.aggregate([
       { $match: { status: "paid", event: { $in: eventIds } } },
       {
         $group: {
           _id: "$event",
-          bookingsCount: { $sum: 1 },
+          bookingsCount: { $sum: "$totalQuantity" },
           totalRevenue: { $sum: "$amount" },
         },
       },
     ]);
 
-    // Map ticket stats to event IDs
     const ticketMap = {};
     tickets.forEach(t => {
       ticketMap[t._id.toString()] = t;
     });
 
-    // Merge stats into events
     const eventsWithStats = events.map(event => ({
       ...event,
       bookingsCount: ticketMap[event._id]?.bookingsCount || 0,
@@ -142,10 +138,20 @@ const createEvent = async (req, res, next) => {
     if (!req.file)
       return res.status(400).json({ message: "Event image required" });
 
-    // title, description, date, time, location, image, organizer, status
-    // ticketTypes .name .price .quantity .sold  
+    let ticketTypes = [];
+
+    if (req.body.ticketTypes) {
+      ticketTypes = JSON.parse(req.body.ticketTypes);
+    }
+
     const event = await EventCollection.create({
-      ...req.body,
+      title: req.body.title,
+      description: req.body.description,
+      date: req.body.date,
+      time: req.body.time,
+      location: req.body.location,
+      status: req.body.status,
+      ticketTypes,
       image: req.file.path,
       organizer: req.user._id,
     });
@@ -155,6 +161,7 @@ const createEvent = async (req, res, next) => {
       message: "Event created successfully",
       event,
     });
+
   } catch (error) {
     next(error);
   }
@@ -168,13 +175,22 @@ const updateEvent = async (req, res, next) => {
     if (!event)
       return res.status(404).json({ message: "Event not found" });
 
-    // Only owner can update
+    if (event.status === "ended") {
+      return res.status(400).json({
+        message: "Ended events cannot be modified",
+      });
+    }
+
     if (event.organizer.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
     if (req.file) {
       req.body.image = req.file.path;
+    }
+
+    if (req.body.ticketTypes) {
+      req.body.ticketTypes = JSON.parse(req.body.ticketTypes);
     }
 
     const updated = await EventCollection.findByIdAndUpdate(
@@ -188,6 +204,7 @@ const updateEvent = async (req, res, next) => {
       message: "Event updated successfully",
       event: updated,
     });
+
   } catch (error) {
     next(error);
   }

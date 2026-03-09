@@ -74,7 +74,7 @@ const bookTicket = async (req, res, next) => {
     const ticketDoc = await TicketCollection.create({
       event: eventId,
       user: req.user._id,
-      name: req.user.fullName || `${req.user.firstName} ${req.user.lastName}` || req.user.email,
+      name: req.user.fullName, 
       email: req.user.email,
       tickets: processedTickets,
       totalQuantity,
@@ -99,48 +99,53 @@ const confirmTicketPayment = async (req, res, next) => {
   try {
     const { reference } = req.query;
 
-    if (!reference)
+    if (!reference) {
       return res.status(400).json({ message: "Reference is required" });
+    }
 
-    const ticket = await TicketCollection.findOne({
-      paymentReference: reference,
-    }).populate("event", "title date location");
+    const ticket = await TicketCollection
+      .findOne({ paymentReference: reference })
+      .populate("event", "title date location");
 
-    if (!ticket)
+    if (!ticket) {
       return res.status(404).json({ message: "Ticket not found" });
+    }
 
-    // ✅ Verify directly with Paystack
+    // Prevent re-verification
+    if (ticket.status === "paid") {
+      return res.status(200).json({
+        message: "Payment already verified",
+        ticket
+      });
+    }
+
     const paystackResponse = await verifyPayment(reference);
 
-    if (!paystackResponse.status) {
-      return res.status(400).json({ message: "Verification failed" });
+    if (!paystackResponse.status || paystackResponse.data.status !== "success") {
+      return res.status(400).json({
+        message: "Payment not successful"
+      });
     }
 
-    const paymentData = paystackResponse.data;
+    const eventDoc = await EventCollection.findById(ticket.event);
 
-    if (paymentData.status !== "success") {
-      return res.status(400).json({ message: "Payment not successful" });
+    if (!eventDoc) {
+      return res.status(404).json({ message: "Event not found" });
     }
 
-    // ✅ Only update once
-    if (ticket.status !== "paid") {
-      const eventDoc = await EventCollection.findById(ticket.event);
-      if (!eventDoc)
-        return res.status(404).json({ message: "Event not found" });
+    // Update ticket inventory
+    for (const item of ticket.tickets) {
+      const ticketType = eventDoc.ticketTypes.id(item.ticketTypeId);
 
-      // Update inventory safely
-      for (const item of ticket.tickets) {
-        const ticketType = eventDoc.ticketTypes.id(item.ticketTypeId);
-        if (ticketType) {
-          ticketType.sold += item.quantity;
-        }
+      if (ticketType) {
+        ticketType.sold += item.quantity;
       }
-
-      await eventDoc.save();
-
-      ticket.status = "paid";
-      await ticket.save();
     }
+
+    await eventDoc.save();
+
+    ticket.status = "paid";
+    await ticket.save();
 
     return res.status(200).json({
       message: "Payment successful",
