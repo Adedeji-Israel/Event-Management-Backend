@@ -7,13 +7,13 @@ const EventCollection = require("../models/event");
 const generateTicketPDF = require("../utils/generateTicketPDF");
 const sendTicketEmail = require("../utils/sendTicketEmail");
 
-router.post("/", async (req, res) => {
+router.post("/paystack", async (req, res) => {
     try {
-        console.log("Webhook hit");
+        console.log("PAYSTACK WEBHOOK RECEIVED");
 
         const hash = crypto
             .createHmac("sha512", process.env.PAYSTACK_SECRET)
-            .update(req.body)
+            .update(req.body.toString())
             .digest("hex");
 
         if (hash !== req.headers["x-paystack-signature"]) {
@@ -38,9 +38,6 @@ router.post("/", async (req, res) => {
         }
 
         const eventDoc = await EventCollection.findById(ticket.event);
-        if (!eventDoc) {
-            return res.sendStatus(200);
-        }
 
         for (const item of ticket.tickets) {
             const ticketType = eventDoc.ticketTypes.id(item.ticketTypeId);
@@ -58,14 +55,15 @@ router.post("/", async (req, res) => {
 
         try {
             await sendTicketEmail(ticket, pdfBuffer, eventDoc);
-            console.log("Email sent successfully!!!"); 
-        } catch (emailError) {
-            console.error("Email failed:", emailError);
+            console.log("TICKET EMAIL SENT SUCCESSFULLY!!!");
+        } catch (error) {
+            console.log("email ticket error: ", error);
         }
-
+        
         console.log("Webhook completed successfully");
 
         res.sendStatus(200);
+
     } catch (error) {
         console.error("Webhook Error:", error);
         res.sendStatus(500);

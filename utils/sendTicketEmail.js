@@ -11,8 +11,9 @@ const sendTicketEmail = async (ticket, pdfBuffer, event) => {
         {
           filename: `${ticket.ticketId}.pdf`,
           content: pdfBuffer.toString("base64"),
+          encoding: "base64",
         },
-      ],
+      ]
     });
 
     console.log("Ticket email sent successfully");
