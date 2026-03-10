@@ -74,7 +74,7 @@ const bookTicket = async (req, res, next) => {
     const ticketDoc = await TicketCollection.create({
       event: eventId,
       user: req.user._id,
-      name: req.user.fullName, 
+      name: req.user.fullName,
       email: req.user.email,
       tickets: processedTickets,
       totalQuantity,

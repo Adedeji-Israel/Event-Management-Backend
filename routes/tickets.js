@@ -38,7 +38,7 @@ router.get("/:ticketId/download/pdf", authMiddleware, authorize("user"), async (
     console.error("Download error:", error);
     res.status(500).json({ message: "Failed to generate PDF" });
   }
-});
+}); 
 
 // PAYSTACK PAYMENT CALLBACK
 router.post("/book/:eventId", authMiddleware, authorize("user"), bookTicket);
