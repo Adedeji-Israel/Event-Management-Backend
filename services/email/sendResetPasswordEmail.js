@@ -1,5 +1,5 @@
-const transporter = require("./mailer");
-const emailTemplate = require("../../utils/emailTemplate");
+const transporter = require("../../utils/nodemailer");
+const emailTemplate = require("../../utils/emailTemplate"); 
 
 const sendResetPasswordEmail = async (userName, email, resetUrl) => {
   try {
