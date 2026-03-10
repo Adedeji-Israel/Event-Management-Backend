@@ -1,7 +1,7 @@
 const express = require("express");
 const TicketCollection = require("../models/ticket");
 const EventCollection = require("../models/event");
-const { getAllTickets, bookTicket, getMyTickets, confirmTicketPayment, getBookedTickets, } = require("../controllers/tickets");
+const { getAllTickets, bookTicket, getMyTickets, getPaymentStatus, getBookedTickets, } = require("../controllers/tickets");
 const { authorize, authMiddleware, } = require("../middlewares/auth");
 const generateTicketPDF = require("../utils/generateTicketPDF");
 
@@ -42,6 +42,6 @@ router.get("/:ticketId/download/pdf", authMiddleware, authorize("user"), async (
 
 // PAYSTACK PAYMENT CALLBACK
 router.post("/book/:eventId", authMiddleware, authorize("user"), bookTicket);
-router.get("/payment/confirm", authMiddleware, authorize("user"), confirmTicketPayment);
+router.get("/payment/confirm", authMiddleware, authorize("user"), getPaymentStatus);
 
 module.exports = router

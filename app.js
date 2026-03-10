@@ -4,7 +4,8 @@ const cookieParser = require("cookie-parser");
 
 const app = express();
 
-app.use("/webhook/paystack", express.raw({ type: "application/json" }));
+app.use("/webhook/paystack", express.raw({ type: "*/*" }));
+
 app.use("/webhook", require("./routes/webhook"));
 
 app.use(cookieParser());
@@ -12,12 +13,12 @@ app.use(cookieParser());
 app.use(cors({
     origin: [
         "http://localhost:5174",
-        "https://eventplace-sable.vercel.app" 
+        "https://eventplace-*****.vercel.app"
     ],
     credentials: true
 }));
 
-app.set("trust proxy", 1); 
+app.set("trust proxy", 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

@@ -1,10 +1,53 @@
 const TicketCollection = require("../models/ticket");
 const EventCollection = require("../models/event");
 const { initializePayment, verifyPayment } = require("../utils/paystack");
+const generateTicketPDF = require("../utils/generateTicketPDF");
+const sendTicketEmail = require("../services/email/sendTicketEmail");
 const dotEnv = require("dotenv");
 dotEnv.config();
 
-const FRONTEND_URL = process.env.CLIENT_DOMAIN
+const FRONTEND_URL = process.env.CLIENT_DOMAIN;
+
+
+/* ================= GET PAYMENT STATUS ================= */
+const getPaymentStatus = async (req, res) => {
+  const { reference } = req.query;
+  if (!reference) return res.status(400).json({ message: "Reference required" });
+
+  let ticket = await TicketCollection.findOne({ paymentReference: reference })
+    .populate("event", "title date location");
+
+  if (!ticket) return res.status(404).json({ message: "Ticket not found" });
+
+  // fallback verify if pending
+  if (ticket.status !== "paid") {
+    try {
+      const paystackRes = await verifyPayment(reference);
+      if (paystackRes.status && paystackRes.data.status === "success") {
+        ticket.status = "paid";
+        await ticket.save();
+
+        // Update ticket sales count in event
+        const eventDoc = await EventCollection.findById(ticket.event);
+        if (eventDoc) {
+          for (const item of ticket.tickets) {
+            const ticketType = eventDoc.ticketTypes.id(item.ticketTypeId);
+            if (ticketType) ticketType.sold += item.quantity;
+          }
+          await eventDoc.save();
+        }
+
+        // Send ticket email
+        const pdfBuffer = await generateTicketPDF(ticket.toObject(), eventDoc);
+        await sendTicketEmail(ticket, pdfBuffer, eventDoc);
+      }
+    } catch (err) {
+      console.error("Fallback verify error:", err.message);
+    }
+  }
+
+  return res.json({ ticket });
+};
 
 /* ================= BOOK TICKET ================= */
 const bookTicket = async (req, res, next) => {
@@ -22,21 +65,16 @@ const bookTicket = async (req, res, next) => {
 
     for (const item of tickets) {
       const { ticketTypeId, quantity } = item;
-      if (!ticketTypeId)
-        return res.status(400).json({ message: "Ticket type ID is required" });
-
       const qty = Number(quantity);
-      if (!qty || qty < 1)
-        return res.status(400).json({ message: "Invalid quantity" });
+      if (!ticketTypeId || !qty || qty < 1)
+        return res.status(400).json({ message: "Invalid ticket selection" });
 
       if (seenTypes.has(ticketTypeId))
         return res.status(400).json({ message: "Duplicate ticket type selected" });
-
       seenTypes.add(ticketTypeId);
 
       const ticketType = event.ticketTypes.id(ticketTypeId);
-      if (!ticketType)
-        return res.status(400).json({ message: "Invalid ticket type" });
+      if (!ticketType) return res.status(400).json({ message: "Invalid ticket type" });
 
       if (ticketType.sold + qty > ticketType.quantity)
         return res.status(400).json({ message: `${ticketType.name} sold out` });
@@ -70,7 +108,6 @@ const bookTicket = async (req, res, next) => {
 
     const reference = initResponse.data.reference;
 
-    // ✅ Create ticket document properly
     const ticketDoc = await TicketCollection.create({
       event: eventId,
       user: req.user._id,
@@ -81,8 +118,6 @@ const bookTicket = async (req, res, next) => {
       amount: totalAmount,
       paymentReference: reference,
     });
-
-    console.log("Ticket items:", ticketDoc.tickets); // ✅ logs actual ticket items
 
     res.status(200).json({
       authorizationUrl: initResponse.data.authorization_url,
@@ -95,68 +130,68 @@ const bookTicket = async (req, res, next) => {
 };
 
 /* ================= CONFIRM PAYMENT ================= */
-const confirmTicketPayment = async (req, res, next) => {
-  try {
-    const { reference } = req.query;
+// const confirmTicketPayment = async (req, res, next) => {
+//   try {
+//     const { reference } = req.query;
 
-    if (!reference) {
-      return res.status(400).json({ message: "Reference is required" });
-    }
+//     if (!reference) {
+//       return res.status(400).json({ message: "Reference is required" });
+//     }
 
-    const ticket = await TicketCollection
-      .findOne({ paymentReference: reference })
-      .populate("event", "title date location");
+//     const ticket = await TicketCollection
+//       .findOne({ paymentReference: reference })
+//       .populate("event", "title date location");
 
-    if (!ticket) {
-      return res.status(404).json({ message: "Ticket not found" });
-    }
+//     if (!ticket) {
+//       return res.status(404).json({ message: "Ticket not found" });
+//     }
 
-    // Prevent re-verification
-    if (ticket.status === "paid") {
-      return res.status(200).json({
-        message: "Payment already verified",
-        ticket
-      });
-    }
+//     // Prevent re-verification
+//     if (ticket.status === "paid") {
+//       return res.status(200).json({
+//         message: "Payment already verified",
+//         ticket
+//       });
+//     }
 
-    const paystackResponse = await verifyPayment(reference);
+//     const paystackResponse = await verifyPayment(reference);
 
-    if (!paystackResponse.status || paystackResponse.data.status !== "success") {
-      return res.status(400).json({
-        message: "Payment not successful"
-      });
-    }
+//     if (!paystackResponse.status || paystackResponse.data.status !== "success") {
+//       return res.status(400).json({
+//         message: "Payment not successful"
+//       });
+//     }
 
-    const eventDoc = await EventCollection.findById(ticket.event);
+//     const eventDoc = await EventCollection.findById(ticket.event);
 
-    if (!eventDoc) {
-      return res.status(404).json({ message: "Event not found" });
-    }
+//     if (!eventDoc) {
+//       return res.status(404).json({ message: "Event not found" });
+//     }
 
-    // Update ticket inventory
-    for (const item of ticket.tickets) {
-      const ticketType = eventDoc.ticketTypes.id(item.ticketTypeId);
+//     // Update ticket inventory
+//     for (const item of ticket.tickets) {
+//       const ticketType = eventDoc.ticketTypes.id(item.ticketTypeId);
 
-      if (ticketType) {
-        ticketType.sold += item.quantity;
-      }
-    }
+//       if (ticketType) {
+//         ticketType.sold += item.quantity;
+//       }
+//     }
 
-    await eventDoc.save();
+//     await eventDoc.save();
 
-    ticket.status = "paid";
-    await ticket.save();
+//     ticket.status = "paid";
+//     await ticket.save();
 
-    return res.status(200).json({
-      message: "Payment successful",
-      ticket,
-    });
+//     return res.status(200).json({
+//       message: "Payment successful",
+//       ticket,
+//     });
 
-  } catch (error) {
-    console.error("Confirm payment error:", error);
-    next(error);
-  }
-};
+//   } catch (error) {
+//     console.error("Confirm payment error:", error);
+//     next(error);
+//   }
+// };
 
 /* ================= ADMIN: ALL TICKETS ================= */
 const getAllTickets = async (req, res, next) => {
@@ -218,7 +253,7 @@ const getMyTickets = async (req, res, next) => {
 
 module.exports = {
   bookTicket,
-  confirmTicketPayment,
+  getPaymentStatus,
   getAllTickets,
   getBookedTickets,
   getMyTickets,

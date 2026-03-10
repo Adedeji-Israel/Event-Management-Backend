@@ -1,4 +1,3 @@
-// routes/webhook.js
 const express = require("express");
 const crypto = require("crypto");
 const router = express.Router();
@@ -7,16 +6,13 @@ const EventCollection = require("../models/event");
 const generateTicketPDF = require("../utils/generateTicketPDF");
 const sendTicketEmail = require("../services/email/sendTicketEmail");
 
-
-router.post("/paystack", async (req, res) => {
+router.post("/paystack", express.raw({ type: "*/*" }), async (req, res) => {
   try {
     console.log("WEBHOOK HIT");
-    console.log("Headers:", req.headers);
 
-    // Verify signature
     const hash = crypto
       .createHmac("sha512", process.env.PAYSTACK_SECRET)
-      .update(req.body.toString())
+      .update(req.body)
       .digest("hex");
 
     if (hash !== req.headers["x-paystack-signature"]) {
@@ -24,54 +20,39 @@ router.post("/paystack", async (req, res) => {
       return res.status(401).send("Invalid signature");
     }
 
-    const payload = JSON.parse(req.body.toString());
-    console.log("EVENT:", payload.event);
-
-    if (payload.event !== "charge.success") {
-      return res.sendStatus(200);
-    }
-
-    console.log("CHARGE SUCCESS RECEIVED");
+    const payload = JSON.parse(req.body);
+    if (payload.event !== "charge.success") return res.sendStatus(200);
 
     const reference = payload.data.reference;
-
-    const ticket = await TicketCollection.findOne({
-      paymentReference: reference,
-    });
-
+    const ticket = await TicketCollection.findOne({ paymentReference: reference });
     if (!ticket) return res.sendStatus(200);
 
-    // Mark ticket as paid if not already
     if (ticket.status !== "paid") {
       ticket.status = "paid";
       await ticket.save();
-    }
 
-    // Update ticket sales count in event
-    const eventDoc = await EventCollection.findById(ticket.event);
-    if (eventDoc) {
-      for (const item of ticket.tickets) {
-        const ticketType = eventDoc.ticketTypes.id(item.ticketTypeId);
-        if (ticketType) ticketType.sold += item.quantity;
+      const eventDoc = await EventCollection.findById(ticket.event);
+      if (eventDoc) {
+        for (const item of ticket.tickets) {
+          const ticketType = eventDoc.ticketTypes.id(item.ticketTypeId);
+          if (ticketType) ticketType.sold += item.quantity;
+        }
+        await eventDoc.save();
+
+        const pdfBuffer = await generateTicketPDF(ticket.toObject(), eventDoc);
+        try {
+          await sendTicketEmail(ticket, pdfBuffer, eventDoc);
+          console.log("Ticket email sent successfully");
+        } catch (err) {
+          console.error("Email send error:", err.message);
+        }
       }
-      await eventDoc.save();
     }
 
-    // Generate PDF
-    const pdfBuffer = await generateTicketPDF(ticket.toObject(), eventDoc);
-
-    // Send ticket email using Nodemailer
-    try {
-      const info = await sendTicketEmail(ticket, pdfBuffer, eventDoc);
-      console.log("TICKET EMAIL SENT SUCCESSFULLY!!! MessageId:", info.messageId);
-    } catch (error) {
-      console.error("Email ticket error:", error);
-    }
-
-    console.log("Webhook completed successfully");
+    console.log("Webhook log completed!");
     res.sendStatus(200);
-  } catch (error) {
-    console.error("Webhook Error:", error);
+  } catch (err) {
+    console.error("Webhook error:", err);
     res.sendStatus(500);
   }
 });
