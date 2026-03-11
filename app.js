@@ -4,9 +4,9 @@ const cookieParser = require("cookie-parser");
 
 const app = express();
 
-app.use("/webhook/paystack", express.raw({ type: "*/*" }));
+app.use("/api/v1/webhook/paystack", express.raw({ type: "*/*" }));
 
-app.use("/webhook", require("./routes/webhook"));
+app.use("/api/v1/webhook", require("./routes/webhook")); 
 
 app.use(cookieParser());
 

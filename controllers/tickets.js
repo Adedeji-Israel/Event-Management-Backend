@@ -39,7 +39,12 @@ const getPaymentStatus = async (req, res) => {
 
         // Send ticket email
         const pdfBuffer = await generateTicketPDF(ticket.toObject(), eventDoc);
-        await sendTicketEmail(ticket, pdfBuffer, eventDoc);
+        try {
+          await sendTicketEmail(ticket, pdfBuffer, eventDoc);
+          console.log("Ticket email sent successfully");
+        } catch (err) {
+          console.error("Email send error:", err.message);
+        }
       }
     } catch (err) {
       console.error("Fallback verify error:", err.message);
