@@ -4,25 +4,29 @@ const cookieParser = require("cookie-parser");
 
 const app = express();
 
-app.use("/api/v1/webhook/paystack", express.raw({ type: "*/*" }));
-
-app.use("/api/v1/webhook", require("./routes/webhook")); 
-
-app.use(cookieParser());
-
 app.use(cors({
     origin: [
         "http://localhost:5174",
-        "https://eventplace-*****.vercel.app"
+        "https://eventplace-sable.vercel.app"
     ],
-    credentials: true
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
+app.options("*", cors());
+
+app.use("/api/v1/webhook/paystack", express.raw({ type: "*/*" }));
+
+app.use(cookieParser());
+
 app.set("trust proxy", 1);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const errorHandler = require("./error/errorHandler");
+/* Routes */
+app.use("/api/v1/webhook", require("./routes/webhook"));
 
 const AuthRoutes = require("./routes/auth");
 const UsersRoutes = require("./routes/users");
@@ -37,16 +41,18 @@ app.use("/api/v1/users", UsersRoutes);
 app.use("/api/v1/events", EventRoutes);
 app.use("/api/v1/tickets", TicketRoutes);
 app.use("/api/v1/bookings", BookingRoutes);
-app.use('/api/v1/auth/verify-account', VerifyAccountRoutes);
+app.use("/api/v1/auth/verify-account", VerifyAccountRoutes);
 app.use("/api/v1/dashboard", DashboardRoutes);
 
+/* 404 */
 app.all("*", (req, res) => {
     res.status(404).json({
         status: "error",
-        message: `${req.method} ${req.originalUrl} is not an endpoint on this server. Check your method & request url again`
+        message: `${req.method} ${req.originalUrl} is not an endpoint on this server.`
     });
 });
 
+const errorHandler = require("./error/errorHandler");
 app.use(errorHandler);
 
-module.exports = app
+module.exports = app;
