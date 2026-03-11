@@ -42,6 +42,6 @@ router.get("/:ticketId/download/pdf", authMiddleware, authorize("user"), async (
 
 // PAYSTACK PAYMENT CALLBACK
 router.post("/book/:eventId", authMiddleware, authorize("user"), bookTicket);
-router.get("/payment/confirm", authMiddleware, authorize("user"), getPaymentStatus);
+router.get("/payment/status", getPaymentStatus); 
 
 module.exports = router
