@@ -30,6 +30,7 @@ router.post("/paystack", async (req, res) => {
         const ticket = await TicketCollection.findOne({
             paymentReference: reference
         });
+        console.log("ticket content: ", ticket); 
 
         if (!ticket) {
             console.log("Ticket not found for reference:", reference);
