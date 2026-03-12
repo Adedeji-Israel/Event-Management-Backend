@@ -1,26 +1,31 @@
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
+
   host: "smtp.gmail.com",
-  port: 465,
-  secure: true, 
+  port: 587,
+  secure: false, // use STARTTLS
+
   auth: {
     user: process.env.APP_EMAIL,
     pass: process.env.APP_PASSWORD,
   },
+
   tls: {
-    rejectUnauthorized: false,
-  },
+    minVersion: "TLSv1.2"
+  }
+
 });
 
-transporter.verify((err, success) => {
-  if (success) {
-    console.log("NOEMIALER KEY:", process.env.APP_EMAIL ? "Loaded" : "Missing");
-    console.log("✅ Mailer is ready!");
-  }
+transporter.verify((error) => {
+
+  if (error) {
+    console.error("❌ Mailer connection failed:", error);
+  } 
   else {
-    console.error("Mailer Error:", err);
+    console.log("✅ Mailer ready (SMTP connected)");
   }
+
 });
 
-module.exports = transporter; 
+module.exports = transporter;

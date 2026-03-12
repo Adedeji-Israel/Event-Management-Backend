@@ -36,6 +36,12 @@ const BookingRoutes = require("./routes/bookings");
 const VerifyAccountRoutes = require("./routes/verifyAccount");
 const DashboardRoutes = require("./routes/dashboard");
 
+if (process.env.NODE_ENV === "development") {
+    const devTestRoutes = require("./routes/devTestRoutes");
+
+    app.use("/api/v1/dev", devTestRoutes);
+}
+
 app.use("/api/v1/auth", AuthRoutes);
 app.use("/api/v1/users", UsersRoutes);
 app.use("/api/v1/events", EventRoutes);

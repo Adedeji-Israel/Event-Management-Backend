@@ -5,7 +5,7 @@
   "type": "commonjs",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon server.js"
+    "dev": "set NODE_TLS_REJECT_UNAUTHORIZED=0 && nodemon server.js"
   },
   "keywords": [],
   "author": "",
