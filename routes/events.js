@@ -19,7 +19,7 @@ router.get("/", getAllEvents);
 /* ================= ORGANIZER ROUTES ================= */
 router.get("/my-events", authMiddleware, authorize("organizer"), getMyEvents);
 router.post(
-    "/",
+    "/create",
     authMiddleware,
     authorize("organizer"),
     upload.single("image"),
@@ -35,7 +35,7 @@ router.get(
 );
 
 router.put(
-    "/:eventId",
+    "/:eventId/edit",
     authMiddleware,
     authorize("organizer"),
     upload.single("image"),
@@ -43,7 +43,7 @@ router.put(
 );
 
 router.delete(
-    "/:eventId",
+    "/:eventId/delete",
     authMiddleware,
     authorize("admin", "organizer"),
     deleteEvent

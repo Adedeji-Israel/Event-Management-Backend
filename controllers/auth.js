@@ -6,8 +6,8 @@ dotEnv.config();
 const generateRandomString = require("../middlewares/generateRandomString");
 const sendVerificationEmail = require("../services/email/sendVerificationEmail");
 const sendResetPasswordEmail = require("../services/email/sendResetPasswordEmail");
-// const clearAuthData = require("../utils/clearAuthData");
 const { generateAccessToken } = require("../utils/generateTokens");
+const sendLoginSuccessEmail = require("../services/email/sendLoginSuccessEmail");
 
 const calculateAge = (dob) => {
   const today = new Date();
@@ -127,6 +127,12 @@ const login = async (req, res, next) => {
     const accessToken = generateAccessToken(user);
 
     user.password = undefined;
+
+    try {
+      await sendLoginSuccessEmail(user.userName, email);
+    } catch (error) {
+      console.log("login email failed:", error);
+    }
 
     return res.status(200).json({
       status: "success",
