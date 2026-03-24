@@ -19,8 +19,6 @@ router.post("/paystack", async (req, res) => {
 
         const payload = JSON.parse(req.body);
 
-        console.log("PAYSTACK EVENT:", payload.event);
-
         if (payload.event !== "charge.success") {
             return res.sendStatus(200);
         }
@@ -30,14 +28,22 @@ router.post("/paystack", async (req, res) => {
         const ticket = await TicketCollection.findOne({
             paymentReference: reference
         });
-        console.log("ticket content: ", ticket); 
 
         if (!ticket) {
             console.log("Ticket not found for reference:", reference);
             return res.sendStatus(200);
         }
 
-        await processSuccessfulPayment(ticket); 
+        // 🔒 Prevent duplicate email sending
+        if (ticket.emailSent) {
+            console.log("⚠️ Email already sent for this ticket");
+            return res.sendStatus(200);
+        }
+
+        // ⚡ Run async (DO NOT BLOCK WEBHOOK)
+        processSuccessfulPayment(ticket).catch(err => {
+            console.error("Async payment processing failed:", err);
+        });
 
         console.log("WEBHOOK HIT ENDED");
 

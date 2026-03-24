@@ -1,4 +1,4 @@
-const transporter = require("../../utils/nodemailer");
+const sendMail = require("../../utils/sendGrid");
 const emailTemplate = require("../../utils/emailTemplate");
 
 const sendResetPasswordEmail = async (userName, email, resetUrl) => {
@@ -15,15 +15,11 @@ const sendResetPasswordEmail = async (userName, email, resetUrl) => {
     footerNote: "This link expires in 1 hour.",
   });
 
-  const info = await transporter.sendMail({
-    from: `"EventPlace" <${process.env.APP_EMAIL}>`,
+  return await sendMail({
     to: email,
     subject: "Reset your EventPlace password",
     html,
   });
-
-  console.log(`🔑 Password reset email sent to ${email}`);
-  return info;
 };
 
 module.exports = sendResetPasswordEmail;

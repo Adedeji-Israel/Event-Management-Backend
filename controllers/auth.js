@@ -128,11 +128,7 @@ const login = async (req, res, next) => {
 
     user.password = undefined;
 
-    try {
-      await sendLoginSuccessEmail(user.userName, email);
-    } catch (error) {
-      console.log("login email failed:", error);
-    }
+    await sendLoginSuccessEmail(user.userName, email);
 
     return res.status(200).json({
       status: "success",

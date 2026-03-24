@@ -1,4 +1,4 @@
-const transporter = require("../../utils/nodemailer");
+const sendMail = require("../../utils/sendGrid");
 const emailTemplate = require("../../utils/emailTemplate");
 
 const sendVerificationEmail = async (userName, email, verifyAccountUrl) => {
@@ -18,15 +18,11 @@ const sendVerificationEmail = async (userName, email, verifyAccountUrl) => {
     footerNote: "This verification link expires in 1 hour.",
   });
 
-  const info = await transporter.sendMail({
-    from: `"Eventplace" <${process.env.APP_EMAIL}>`,
+  return await sendMail({
     to: email,
     subject: `Verify your Eventplace account`,
     html,
   });
-
-  console.log(`📧 Verification email sent to ${email}`);
-  return info;
 };
 
 module.exports = sendVerificationEmail;

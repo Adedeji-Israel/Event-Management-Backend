@@ -1,4 +1,4 @@
-const transporter = require("../../utils/nodemailer");
+const sendMail = require("../../utils/sendGrid");
 const emailTemplate = require("../../utils/emailTemplate");
 
 const sendVerificationSuccessEmail = async (userName, email, loginUrl) => {
@@ -14,15 +14,11 @@ const sendVerificationSuccessEmail = async (userName, email, loginUrl) => {
     buttonLink: loginUrl,
   });
 
-  const info = await transporter.sendMail({
-    from: `"EventPlace" <${process.env.APP_EMAIL}>`,
+  return await sendMail({
     to: email,
     subject: "Your EventPlace account is verified 🎉",
     html,
   });
-
-  console.log(`📧 Verification success email sent to ${email}`);
-  return info;
 };
 
 module.exports = sendVerificationSuccessEmail;
