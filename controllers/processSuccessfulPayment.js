@@ -53,9 +53,6 @@ const processSuccessfulPayment = async (ticket) => {
 
     } catch (error) {
         console.error("❌ processSuccessfulPayment error:", error);
-
-        // 🔁 Optional retry logic hook
-        // (you can queue this later)
     }
 };
 

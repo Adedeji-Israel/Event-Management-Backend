@@ -6,7 +6,6 @@ require("dotenv").config();
 
 const FRONTEND_URL = process.env.CLIENT_DOMAIN;
 
-
 /* ================= BOOK TICKET ================= */
 const bookTicket = async (req, res, next) => {
   try {
@@ -78,11 +77,13 @@ const bookTicket = async (req, res, next) => {
       status: "pending"
     });
 
-    res.status(200).json({
+    return res.status(200).json({
+      success: true,
       authorizationUrl: initResponse.data.authorization_url,
       reference,
       ticket: ticketDoc,
     });
+
   } catch (error) {
     next(error);
   }
