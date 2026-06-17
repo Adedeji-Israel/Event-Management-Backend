@@ -1,4 +1,4 @@
-const sendMail = require("../../utils/sendGrid");
+const sendMail = require("../../utils/mailerSend");
 const emailTemplate = require("../../utils/emailTemplate");
 
 const sendLoginSuccessEmail = async (userName, email) => {

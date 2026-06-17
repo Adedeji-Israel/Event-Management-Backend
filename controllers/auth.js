@@ -75,7 +75,7 @@ const signup = async (req, res, next) => {
 
     const verifyAccountUrl = `${process.env.CLIENT_DOMAIN}/auth/verify-account/${verificationToken}`
 
-    sendVerificationEmail(userName, email, verifyAccountUrl);
+    // sendVerificationEmail(userName, email, verifyAccountUrl);
 
     return res.status(201).json({
       status: "success",
@@ -128,7 +128,7 @@ const login = async (req, res, next) => {
 
     user.password = undefined;
 
-    await sendLoginSuccessEmail(user.userName, email);
+    // await sendLoginSuccessEmail(user.userName, email);
 
     return res.status(200).json({
       status: "success",

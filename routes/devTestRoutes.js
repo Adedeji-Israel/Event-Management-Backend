@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const sendMail = require("../utils/sendGrid");
+const sendMail = require("../utils/mailerSend");
 const generateTicketPDF = require("../utils/generateTicketPDF");
 
 /* ================= SIMPLE EMAIL TEST ================= */
