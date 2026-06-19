@@ -1,4 +1,6 @@
-const sendMail = require("../../utils/mailerSend");
+// const sendMail = require("../../utils/mailerSend");
+const transporter = require("../../utils/transporter");
+
 const emailTemplate = require("../../utils/emailTemplate");
 
 const sendLoginSuccessEmail = async (userName, email) => {
@@ -12,11 +14,19 @@ const sendLoginSuccessEmail = async (userName, email) => {
     `,
     });
 
-    return await sendMail({
+    transporter.sendMail({
         to: email,
-        subject: "New Login Detected - EventPlace",
+        subject: "*** testing 12 ***",
         html,
     });
+
+    console.log("Login success email sent successfully!");
+
+    // return await sendMail({
+    //     to: email,
+    //     subject: "New Login Detected - EventPlace",
+    //     html,
+    // });
 };
 
 module.exports = sendLoginSuccessEmail;

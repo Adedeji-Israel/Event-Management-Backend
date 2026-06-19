@@ -128,7 +128,7 @@ const login = async (req, res, next) => {
 
     user.password = undefined;
 
-    // await sendLoginSuccessEmail(user.userName, email);
+    await sendLoginSuccessEmail(user.userName, email);
 
     return res.status(200).json({
       status: "success",
