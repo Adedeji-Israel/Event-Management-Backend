@@ -5,22 +5,27 @@ const emailTemplate = require("../../utils/emailTemplate");
 
 const sendLoginSuccessEmail = async (userName, email) => {
 
-    const html = emailTemplate({
-        heading: "Login Successful",
-        message: `
+    try {
+        const html = emailTemplate({
+            heading: "Login Successful",
+            message: `
       <p>Hello ${userName},</p>
       <p>You have successfully logged in to your <strong>EventPlace</strong> account.</p>
       <p>If this was not you, please reset your password immediately.</p>
     `,
-    });
+        });
 
-    transporter.sendMail({
-        to: email,
-        subject: "*** testing 12 ***",
-        html,
-    });
+        await transporter.sendMail({
+            to: email,
+            subject: "*** testing 12 ***",
+            html,
+        });
 
-    console.log("Login success email sent successfully!");
+        console.log("Login success email sent successfully!");
+
+    } catch (error) {
+        console.log("login email error: ", error);
+    }
 
     // return await sendMail({
     //     to: email,
