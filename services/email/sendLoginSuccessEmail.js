@@ -1,6 +1,4 @@
-// const sendMail = require("../../utils/mailerSend");
 const transporter = require("../../utils/transporter");
-
 const emailTemplate = require("../../utils/emailTemplate");
 
 const sendLoginSuccessEmail = async (userName, email) => {
@@ -9,15 +7,16 @@ const sendLoginSuccessEmail = async (userName, email) => {
         const html = emailTemplate({
             heading: "Login Successful",
             message: `
-      <p>Hello ${userName},</p>
-      <p>You have successfully logged in to your <strong>EventPlace</strong> account.</p>
-      <p>If this was not you, please reset your password immediately.</p>
-    `,
+            <p>Hello ${userName},</p>
+            <p>You have successfully logged in to your <strong>EventPlace</strong> account.</p>
+            <p>If this was not you, please reset your password immediately.</p>
+            `,
         });
 
         await transporter.sendMail({
+            from: `"EventPlace" <${process.env.APP_EMAIL}>`,
             to: email,
-            subject: "*** testing 12 ***",
+            subject: "Login Successful - EventPlace",
             html,
         });
 
@@ -25,13 +24,9 @@ const sendLoginSuccessEmail = async (userName, email) => {
 
     } catch (error) {
         console.log("login email error: ", error);
+        return { success: false, error: error.message };
     }
 
-    // return await sendMail({
-    //     to: email,
-    //     subject: "New Login Detected - EventPlace",
-    //     html,
-    // });
 };
 
 module.exports = sendLoginSuccessEmail;

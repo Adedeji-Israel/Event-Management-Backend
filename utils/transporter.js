@@ -7,13 +7,13 @@ dotEnv.config();
 
 const transporter = createTransport({
     host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
+    port: 465,
+    secure: true,
     auth: {
         user: process.env.APP_EMAIL,
         pass: process.env.APP_PASSWORD
     },
-
+    connectionTimeout: 10000,
 });
 
 transporter.verify((error, success) => {

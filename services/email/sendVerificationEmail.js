@@ -1,11 +1,12 @@
-const sendMail = require("../../utils/mailerSend");
+const transporter = require("../../utils/transporter");
 const emailTemplate = require("../../utils/emailTemplate");
 
 const sendVerificationEmail = async (userName, email, verifyAccountUrl) => {
 
-  const html = emailTemplate({
-    heading: "VERIFY YOUR ACCOUNT",
-    message: `
+  try {
+    const html = emailTemplate({
+      heading: "VERIFY YOUR ACCOUNT",
+      message: `
       <p>Hello ${userName},</p>
       <p>
         Welcome to <strong>EventPlace</strong> 🎉
@@ -13,16 +14,23 @@ const sendVerificationEmail = async (userName, email, verifyAccountUrl) => {
       </p>
       <p>Please confirm your email address to activate your account.</p>
     `,
-    buttonText: "VERIFY EMAIL ADDRESS",
-    buttonLink: verifyAccountUrl,
-    footerNote: "This verification link expires in 1 hour.",
-  });
+      buttonText: "VERIFY EMAIL ADDRESS",
+      buttonLink: verifyAccountUrl,
+      footerNote: "This verification link expires in 1 hour.",
+    });
 
-  return await sendMail({
-    to: email,
-    subject: `Verify your Eventplace account`,
-    html,
-  });
+    await transporter.sendMail({
+      from: `"EventPlace" <${process.env.APP_EMAIL}>`,
+      to: email,
+      subject: `Verify your account - EventPlace`,
+      html,
+    });
+    
+  } catch (error) {
+    console.log("Verification email error: ", error);
+    return { success: false, error: error.message };
+  }
+
 };
 
 module.exports = sendVerificationEmail;

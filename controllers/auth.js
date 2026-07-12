@@ -75,7 +75,7 @@ const signup = async (req, res, next) => {
 
     const verifyAccountUrl = `${process.env.CLIENT_DOMAIN}/auth/verify-account/${verificationToken}`
 
-    // sendVerificationEmail(userName, email, verifyAccountUrl);
+    await sendVerificationEmail(userName, email, verifyAccountUrl);
 
     return res.status(201).json({
       status: "success",
@@ -271,7 +271,6 @@ module.exports = {
   signup,
   login,
   authMe,
-  // refreshAccessToken,
   logout,
   resetPassword,
   forgotPassword
