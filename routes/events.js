@@ -8,7 +8,7 @@ const {
     deleteEvent,
 } = require("../controllers/events");
 
-const { authMiddleware, authorize } = require("../middlewares/auth");
+const { protect, authorize } = require("../middlewares/auth");
 const upload = require("../config/multer");
 
 const router = express.Router();
@@ -17,10 +17,10 @@ const router = express.Router();
 router.get("/", getAllEvents);
 
 /* ================= ORGANIZER ROUTES ================= */
-router.get("/my-events", authMiddleware, authorize("organizer"), getMyEvents);
+router.get("/my-events", protect, authorize("organizer"), getMyEvents);
 router.post(
     "/create",
-    authMiddleware,
+    protect,
     authorize("organizer"),
     upload.single("image"),
     createEvent
@@ -29,14 +29,14 @@ router.post(
 /* ================= SHARED ROUTES ================= */
 router.get(
     "/:eventId",
-    authMiddleware,
+    protect,
     authorize("admin", "organizer", "user"),
     getEventById
 );
 
 router.put(
     "/:eventId/edit",
-    authMiddleware,
+    protect,
     authorize("organizer"),
     upload.single("image"),
     updateEvent
@@ -44,7 +44,7 @@ router.put(
 
 router.delete(
     "/:eventId/delete",
-    authMiddleware,
+    protect,
     authorize("admin", "organizer"),
     deleteEvent
 );

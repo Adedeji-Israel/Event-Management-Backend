@@ -2,20 +2,20 @@ const express = require("express");
 const TicketCollection = require("../models/ticket");
 const EventCollection = require("../models/event");
 const { getAllTickets, bookTicket, getMyTickets, getPaymentStatus, getBookedTickets, } = require("../controllers/tickets");
-const { authorize, authMiddleware, } = require("../middlewares/auth");
+const { authorize, protect, } = require("../middlewares/auth");
 const generateTicketPDF = require("../utils/generateTicketPDF");
 
 const router = express.Router();
 
 // ADMIN
-router.get("/", authMiddleware, authorize("admin"), getAllTickets);
+router.get("/", protect, authorize("admin"), getAllTickets);
 
 // ORGANIZER 
-router.get("/booked-tickets", authMiddleware, authorize("organizer"), getBookedTickets);
+router.get("/booked-tickets", protect, authorize("organizer"), getBookedTickets);
 
 // USER
-router.get("/my-tickets", authMiddleware, authorize("user"), getMyTickets);
-router.get("/:ticketId/download/pdf", authMiddleware, authorize("user"), async (req, res) => {
+router.get("/my-tickets", protect, authorize("user"), getMyTickets);
+router.get("/:ticketId/download/pdf", protect, authorize("user"), async (req, res) => {
   try {
     const ticket = await TicketCollection.findById(req.params.ticketId);
     if (!ticket) return res.status(404).json({ message: "Ticket not found" });
@@ -41,7 +41,7 @@ router.get("/:ticketId/download/pdf", authMiddleware, authorize("user"), async (
 }); 
 
 // PAYSTACK PAYMENT CALLBACK
-router.post("/book/:eventId", authMiddleware, authorize("user"), bookTicket);
+router.post("/book/:eventId", protect, authorize("user"), bookTicket);
 router.get("/payment/status", getPaymentStatus); 
 
 module.exports = router
