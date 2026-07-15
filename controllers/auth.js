@@ -256,7 +256,7 @@ const forgotPassword = async (req, res, next) => {
     }
 
     const resetToken = generateRandomString(32);
-    user.resetPasswordToken = hashTokenn(resetToken); // store hash, not raw token
+    user.resetPasswordToken = hashToken(resetToken); // store hash, not raw token
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
     await user.save();
 
@@ -279,7 +279,7 @@ const forgotPassword = async (req, res, next) => {
 const resetPassword = async (req, res, next) => {
   try {
     const { resetPasswordToken } = req.params;
-    const hashedToken = hashTokenn(resetPasswordToken);
+    const hashedToken = hashToken(resetPasswordToken);
 
     const user = await UserCollection.findOne({
       resetPasswordToken: hashedToken,
