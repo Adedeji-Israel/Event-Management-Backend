@@ -384,19 +384,121 @@ const adminEvents = async (req, res) => {
   }
 };
 
+// USER REQUEST
+const requestOrganizer = async (req, res) => {
+  try {
+    const status = req.user.organizerRequest;
+
+    if (status === "pending") {
+      return res.status(400).json({
+        message: "Organizer request already pending",
+      });
+    }
+
+    if (status === "approved") {
+      return res.status(400).json({
+        message: "You are already an approved organizer",
+      });
+    }
+
+    await User.findByIdAndUpdate(req.user._id, {
+      organizerRequest: "pending",
+    });
+
+    res.json({
+      message: "Organizer request submitted successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// VIEW REQUESTS
+const viewRequests = async (req, res) => {
+  try {
+    const requests = await User.find({
+      organizerRequest: { $in: ["pending", "approved", "rejected"] },
+    })
+      .select("fullName email dateOfBirth organizerRequest")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: requests.length,
+      data: requests,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to fetch requests" });
+  }
+};
+
+// APPROVE REQUEST
+const approveRequest = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { organizerRequest: "approved", role: "organizer" }, // adjust field name if different
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to approve request" });
+  }
+};
+
+// REJECT REQUEST
+const rejectRequest = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { organizerRequest: "rejected" },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to reject request" });
+  }
+};
 
 module.exports = {
   userOverview,
   userTickets,
   userUpcomingEvents,
   userPastEvents,
+  requestOrganizer,
   organizerOverview,
   organizerEvents,
-  // getOrganizerEvents, 
   organizerEventSales,
   organizerEventAttendees,
   adminOverview,
   adminUsers,
   adminOrganizers,
   adminEvents,
+  viewRequests,
+  approveRequest,
+  rejectRequest,
 };

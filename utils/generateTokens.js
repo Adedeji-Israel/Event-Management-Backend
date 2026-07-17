@@ -1,7 +1,9 @@
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const dotEnv = require("dotenv");
+dotEnv.config();
 
-const ACCESS_TOKEN_EXPIRY = "15m";
+const ACCESS_TOKEN_EXPIRY = "30m";
 const REFRESH_TOKEN_EXPIRY_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 const signAccessToken = (user) =>

@@ -226,6 +226,22 @@ const deleteEvent = async (req, res, next) => {
       return res.status(403).json({ message: "Not authorized" });
     }
 
+    // Organizers cannot delete an event once someone has booked (paid for) it.
+    // Admins are exempt — they may need to remove an event regardless
+    // (e.g. fraud, policy violation), so this check is scoped to organizers only.
+    if (req.user.role === "organizer") {
+      const bookingCount = await TicketCollection.countDocuments({
+        event: event._id,
+        status: "paid",
+      });
+
+      if (bookingCount > 0) {
+        return res.status(400).json({
+          message: `This event has ${bookingCount} booking${bookingCount > 1 ? "s" : ""} and cannot be deleted.`,
+        });
+      }
+    }
+
     await event.deleteOne();
 
     res.status(200).json({
